@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bryan’s Master Daily Health Schedule</title>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #0f172a;
+      --muted: #6b7280;
+      --card: #f8fafc;
+      --border: #e5e7eb;
+      --must: #d4edda;   /* green */
+      --opt:  #fff3cd;   /* yellow */
+      --rev:  #f8d7da;   /* red */
+      --accent:#0f172a;  /* header bg */
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --fg: #e5e7eb;
+        --muted:#a3a3a3;
+        --card:#0f172a;
+        --border:#1f2937;
+        --must:#13351a;
+        --opt: #3d3615;
+        --rev: #3a1515;
+        --accent:#111827;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    header { position: sticky; top: 0; backdrop-filter: saturate(140%) blur(6px); background: color-mix(in srgb, var(--bg) 90%, transparent); border-bottom: 1px solid var(--border); z-index: 10; }
+    header .inner { display: grid; gap: 6px; padding: 12px 0; }
+    h1 { margin: 0; font-size: 20px; }
+    .sub { margin: 0; color: var(--muted); font-size: 13px; }
+    .grid { display: grid; gap: 16px; margin-top: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+    .row { display: grid; gap: 8px; }
+    .controls { display: grid; gap: 8px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) {
+      .controls { grid-template-columns: 1fr auto auto auto; align-items: end; }
+    }
+    label { font-size: 13px; color: var(--muted); }
+    input[type="text"], select, button, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    }
+    button { cursor: pointer; font-weight: 600; }
+    .legend span { display: inline-block; padding: 6px 10px; border-radius: 9999px; margin-right: 8px; font-size: 12px; border: 1px solid var(--border); }
+    .legend .must { background: var(--must); }
+    .legend .opt  { background: var(--opt); }
+    .legend .rev  { background: var(--rev); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; overflow: hidden; border-radius: 12px; }
+    thead th { position: sticky; top: 66px; background: var(--accent); color: #fff; z-index: 5; }
+    th, td { border-bottom: 1px solid var(--border); text-align: left; padding: 10px; vertical-align: top; }
+    tr.must { background: var(--must); }
+    tr.opt  { background: var(--opt); }
+    tr.rev  { background: var(--rev); }
+    .muted { color: var(--muted); }
+    .links a { display: inline-block; margin-right: 10px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .sticky-actions { position: sticky; bottom: 12px; display: grid; gap: 8px; }
+    @media (min-width: 720px) { .sticky-actions { grid-auto-flow: column; justify-content: end; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container inner">
+      <h1>Master Daily Health Schedule</h1>
+      <p class="sub">Mobile‑friendly (portrait). Filter, search, add notes, print, and export CSV/iCal. Notes save to your device.</p>
+    </div>
+  </header>
+
+  <main class="container grid">
+    <!-- Controls -->
+    <section class="card">
+      <div class="controls">
+        <div>
+          <label for="search">Search</label>
+          <input id="search" type="text" placeholder="Find by time, item, purpose..." />
+        </div>
+        <div>
+          <label for="priority">Priority</label>
+          <select id="priority">
+            <option value="">All</option>
+            <option value="Must-do">Must-do</option>
+            <option value="Optional">Optional</option>
+            <option value="Review">Review</option>
+          </select>
+        </div>
+        <div>
+          <label for="timeblock">Time block</label>
+          <select id="timeblock">
+            <option value="">All day</option>
+            <option value="Morning">Morning</option>
+            <option value="Midday">Midday</option>
+            <option value="Evening">Evening</option>
+            <option value="Bedtime">Bedtime</option>
+            <option value="Weekly/PRN">Weekly/PRN</option>
+          </select>
+        </div>
+        <div class="sticky-actions">
+          <button id="btn-print">Print / Save PDF</button>
+          <button id="btn-csv">Export CSV</button>
+          <button id="btn-ics">Export iCal</button>
+        </div>
+      </div>
+      <div class="legend" style="margin-top:10px;">
+        <span class="must">Must‑do</span>
+        <span class="opt">Optional</span>
+        <span class="rev">Review</span>
+      </div>
+    </section>
+
+    <!-- Notes -->
+    <section class="card">
+      <div class="row">
+        <div>
+          <label for="notes">Personal Notes</label>
+          <textarea id="notes" rows="6" placeholder="Log notes here…"></textarea>
+          <div class="hint">Notes are stored locally in your browser (no cloud). You can copy/paste anytime.</div>
+        </div>
+        <div class="sticky-actions">
+          <button id="save-notes">Save Notes</button>
+          <button id="clear-notes">Clear Notes</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule Table -->
+    <section class="card">
+      <table id="schedule">
+        <thead>
+          <tr>
+            <th style="width:100px;">Time</th>
+            <th>Medication / Supplement / Activity</th>
+            <th style="width:100px;">Dose</th>
+            <th style="width:100px;">Priority</th>
+            <th>Why It Matters</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint">Weekly items appear at the end; Sunday Mounjaro timing rule is baked in.</p>
+    </section>
+  </main>
+
+  <script>
+    // ---- Data (merged schedule you approved) ----
+    const DATA = [
+      // Morning fasted
+      ["6:45 AM","NP Thyroid","90 mg oral","Must-do","Empty stomach; ≥30–60 min before food/coffee/minerals.","Morning"],
+      ["7:00 AM","Testosterone Cypionate (SQ)","30 mg","Review","Monitor Hct (>54% → phlebotomy).","Morning"],
+      ["7:00 AM","Minoxidil (oral)","2.5 mg","Optional","Hair; monitor BP/HR.","Morning"],
+      ["7:05 AM","Ipamorelin (SQ)","300 mcg","Review","GH secretagogue.","Morning"],
+      ["7:05 AM","Tesamorelin (SQ)","2 mg","Must-do","Reduces visceral fat.","Morning"],
+      ["7:05 AM","BPC-157 (SQ)","per protocol","Review","Repair peptide.","Morning"],
+      ["7:05 AM","TB-500 (SQ)","per protocol","Review","Recovery peptide.","Morning"],
+      ["7:10 AM","NAD+ injection (IM/SQ)","100 mg ≤5d/wk","Must-do","Cellular energetics.","Morning"],
+      ["7:15 AM","1‑MNA","58 mg oral","Must-do","NAD pathway support.","Morning"],
+      ["7:15 AM","NMN + Trans‑Resveratrol","500 mg + 500 mg oral","Must-do","Sirtuin/mitochondrial.","Morning"],
+      ["7:15 AM","NAD Regen / Regen BioStack","per label","Optional","NAD cofactors.","Morning"],
+      ["7:15 AM","TMG","750 mg oral","Optional","Methyl donor; homocysteine control.","Morning"],
+      ["7:15 AM","Urolithin A","1000 mg oral","Must-do","Mitophagy/endurance.","Morning"],
+      ["7:20 AM","Essential Amino Acids","5 g","Optional","Pre-activity MPS support.","Morning"],
+      ["7:25 AM","Light activity","10–20 min","Must-do","Insulin sensitivity.","Morning"],
+
+      // Morning with breakfast
+      ["8:00 AM","Biktarvy","1 tab oral","Must-do","HIV suppression; separate minerals ±2 h.","Morning"],
+      ["8:00 AM","Acarbose","100 mg w/ first bite","Must-do","Postprandial glucose control.","Morning"],
+      ["8:00 AM","Metformin","1000 mg oral","Must-do","Glycemic control.","Morning"],
+      ["8:00 AM","Jardiance","25 mg oral","Must-do","Cardio‑renal benefit; hydrate well.","Morning"],
+      ["8:00 AM","Ezetimibe","10 mg oral","Must-do","LDL lowering.","Morning"],
+      ["8:00 AM","Chlorthalidone","25 mg oral","Must-do","BP control; monitor electrolytes.","Morning"],
+      ["8:00 AM","Propranolol","10 mg oral","Must-do","Tremor control.","Morning"],
+      ["8:00 AM","Auvelity","45/105 mg oral","Must-do","Depression regimen.","Morning"],
+      ["8:00 AM","Pristiq","50 mg oral","Must-do","Depression regimen.","Morning"],
+      ["8:00 AM","Vyvanse","50 mg oral","Must-do","Focus/appetite.","Morning"],
+      ["8:00 AM","Flonase nasal (PRN)","as directed","Optional","Allergy relief.","Morning"],
+      ["8:05 AM","Omeprazole","20 mg oral","Review","GERD; monitor Mg/B12.","Morning"],
+      ["8:05 AM","CoQ10","100 mg oral","Must-do","Cardiac/mito support; with fat.","Morning"],
+      ["8:05 AM","Fish Oil (EPA/DHA)","EPA 1410 / DHA 990 mg","Must-do","Anti-inflammatory; brain/heart.","Morning"],
+      ["8:05 AM","Premium Omega + CoQ10 + Astaxanthin","per label","Optional","Antioxidant blend.","Morning"],
+      ["8:10 AM","Vitamin D3 + K2","125 mcg + 250 mcg oral","Must-do","Bone/immune/vascular.","Morning"],
+      ["8:10 AM","Selenium (liposomal)","200 mcg oral","Review","Thyroid/antioxidant; avoid excess.","Morning"],
+      ["8:10 AM","Grass‑Fed Beef Liver","3 g oral","Must-do","Heme iron, B12; ferritin support.","Morning"],
+      ["8:15 AM","Hyaluronic Acid","70 mg oral","Optional","Skin/joint hydration.","Morning"],
+      ["8:15 AM","Acetyl‑L‑Carnitine","500 mg oral","Optional","Cognition/mito; space from thyroid dose.","Morning"],
+      ["8:15 AM","Taurine","3200 mg oral","Optional","BP/NS modulation; calming.","Morning"],
+
+      // Midday / afternoon
+      ["12:30 PM","Acarbose (if carbs)","100 mg","Must-do","Reduce post‑meal glucose.","Midday"],
+      ["12:30 PM","Sodium Butyrate (ER)","600 mg","Optional","Gut barrier/microbiome.","Midday"],
+      ["12:35 PM","Fiber","1 g","Optional","Satiety, LDL & glucose support (separate meds by ≥2 h).","Midday"],
+      ["12:40 PM","Beef Colostrum (liposomal)","2500 mg","Optional","Immune & gut support.","Midday"],
+      ["1:00 PM","Hydration checkpoint","16–20 oz + electrolytes","Must-do","Kidney support (Cr), BP, recovery.","Midday"],
+      ["1:20 PM","Tesofensine (q48h)","250 mcg oral","Review","Appetite/mood; monitor BP/HR.","Midday"],
+      ["1:25 PM","Movement break","10–15 min","Must-do","Post‑meal glucose control.","Midday"],
+      ["1:45 PM","Methylene Blue","12 mg oral","Review","Mito/cognition; space from serotonergic meds.","Midday"],
+
+      // Evening / after dinner
+      ["6:30 PM","Strength Training (Mon/Wed/Fri)","45–60 min","Must-do","Muscle & insulin sensitivity; finish ≥2 h before bed.","Evening"],
+      ["6:35 PM","Creatine Monohydrate","5 g","Must-do","Strength & cognition; with carbs/protein.","Evening"],
+      ["6:35 PM","EAAs (if training)","5 g","Optional","Recovery & MPS.","Evening"],
+      ["7:00 PM","Cialis","10 mg oral","Review","ED/vascular; monitor BP; avoid nitrates.","Evening"],
+      ["7:00 PM","Naltrexone","50 mg oral","Review","Cravings reduction.","Evening"],
+      ["7:00 PM","Minoxidil (oral)","2.5 mg","Optional","Hair; monitor BP/HR.","Evening"],
+      ["7:05 PM","Pregnenolone","50 mg oral","Review","Neurosteroid; mood/cognition.","Evening"],
+      ["7:05 PM","DHEA SR","60 mg oral","Review","Adrenal/androgen; may raise estradiol.","Evening"],
+      ["7:10 PM","Acetyl‑L‑Carnitine (alt)","500 mg oral","Optional","Cognition/mito (alt to AM).","Evening"],
+      ["7:15 PM","Astaxanthin","12 mg","Optional","Antioxidant; skin/eye benefits.","Evening"],
+      ["7:15 PM","ResveraCel","2 caps","Must-do","NR + resveratrol NAD+ support.","Evening"],
+      ["7:20 PM","GHK‑Cu (cycle days)","per protocol","Optional","Skin repair/collagen.","Evening"],
+      ["7:30 PM","Hydration checkpoint","12–16 oz (+ electrolytes if trained)","Must-do","Rehydrate; kidney support.","Evening"],
+      ["9:00 PM","Doxazosin + Tamsulosin","4 mg + 0.4 mg oral","Optional","BPH symptom relief; minimize daytime orthostasis.","Evening"],
+
+      // Bedtime / sleep
+      ["9:30 PM","Dim lights / reduce screens","—","Must-do","Facilitates melatonin release.","Bedtime"],
+      ["9:35 PM","Bedroom temp","65–68°F","Must-do","Improves sleep onset.","Bedtime"],
+      ["9:40 PM","Stretching / mobility","5–10 min","Optional","Parasympathetic activation.","Bedtime"],
+      ["9:45 PM","Somatropin (GH)","3 IU SQ","Review","IGF‑1 monitoring; avoid chronic excess.","Bedtime"],
+      ["9:50 PM","EL‑Restora‑Z","per prescription","Must-do","Insomnia protocol; avoid additional sedatives.","Bedtime"],
+      ["9:50 PM","Apigenin","400 mg","Must-do","GABAergic calming; sleep onset.","Bedtime"],
+      ["9:55 PM","Ramelteon (PRN)","8 mg","Optional","Melatonin receptor agonist; circadian support.","Bedtime"],
+      ["10:10 PM","CPAP check","Seal & humidifier","Must-do","OSA control; improve sleep efficiency.","Bedtime"],
+      ["11:00 PM","Lights out target","—","Must-do","Consistent onset → hormonal balance.","Bedtime"],
+
+      // Weekly / PRN
+      ["Weekly (Sun)","Mounjaro (tirzepatide)","15 mg SQ","Must-do","T2DM/weight; slows gastric emptying — space large oral doses ±2–3 h.","Weekly/PRN"],
+      ["Weekly","Estradiol Cypionate","1 mg SQ","Review","Balance libido/mood; monitor E2.","Weekly/PRN"],
+      ["PRN","Albuterol HFA","2 puffs","Optional","EIB relief; pre‑exercise as needed.","Weekly/PRN"],
+      ["PRN","Naproxen","500 mg oral","Review","Pain control; with food; limit NSAID stacking with SGLT2 + diuretic.","Weekly/PRN"],
+      ["PRN","Tylenol","650 mg oral","Review","Pain control; mind total daily dose.","Weekly/PRN"],
+      ["Temporary","Valtrex","1000 mg TID","Review","Short‑term therapy; hydrate.","Weekly/PRN"],
+      ["Daily","IP6","1 g 1–2×/day","Optional","Cellular health; separate from minerals.","Weekly/PRN"],
+      ["As needed","Epitalon / SS‑31 / Melanotan II","per protocol","Review","Specialty peptides; monitor skin/BP/mood.","Weekly/PRN"],
+    ];
+
+    // ---- Render table ----
+    const tbody = document.querySelector("#schedule tbody");
+    const searchEl = document.getElementById("search");
+    const prioEl = document.getElementById("priority");
+    const blockEl = document.getElementById("timeblock");
+
+    function prioClass(p) {
+      if (p === "Must-do") return "must";
+      if (p === "Optional") return "opt";
+      return "rev";
+    }
+    function render() {
+      const q = (searchEl.value || "").toLowerCase();
+      const pri = prioEl.value;
+      const block = blockEl.value;
+      tbody.innerHTML = "";
+      for (const r of DATA) {
+        const [time, item, dose, prio, why, tb] = r;
+        const hay = (time + " " + item + " " + dose + " " + prio + " " + why + " " + tb).toLowerCase();
+        if (q && !hay.includes(q)) continue;
+        if (pri && prio !== pri) continue;
+        if (block && tb !== block) continue;
+        const tr = document.createElement("tr");
+        tr.className = prioClass(prio);
+        tr.innerHTML = `
+          <td>${time}</td>
+          <td>${item}</td>
+          <td>${dose}</td>
+          <td>${prio}</td>
+          <td>${why}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    searchEl.addEventListener("input", render);
+    prioEl.addEventListener("change", render);
+    blockEl.addEventListener("change", render);
+
+    // ---- Notes (local storage) ----
+    const NOTES_KEY = "bryan_notes_v2";
+    const notesEl = document.getElementById("notes");
+    document.getElementById("save-notes").onclick = () => {
+      localStorage.setItem(NOTES_KEY, notesEl.value);
+      alert("Notes saved");
+    };
+    document.getElementById("clear-notes").onclick = () => {
+      if (confirm("Clear notes?")) { localStorage.removeItem(NOTES_KEY); notesEl.value = ""; }
+    };
+    (function loadNotes(){ const v = localStorage.getItem(NOTES_KEY); if (v !== null) notesEl.value = v; })();
+
+    // ---- Print / CSV / iCal ----
+    document.getElementById("btn-print").onclick = () => window.print();
+
+    document.getElementById("btn-csv").onclick = () => {
+      const header = ["Time","Item","Dose","Priority","Why","Block"];
+      const lines = [header.join(",")];
+      for (const r of DATA) {
+        lines.push(r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","));
+      }
+      const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "master_daily_schedule.csv";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    // Simple iCal generator (VEVENTs for Must‑do + Review + Optional)
+    document.getElementById("btn-ics").onclick = () => {
+      const pad = n => String(n).padStart(2,"0");
+      const now = new Date();
+      const y = now.getFullYear(), m = pad(now.getMonth()+1), d = pad(now.getDate());
+      const today = `${y}${m}${d}`;
+
+      function to24h(t) {
+        // "6:45 AM" -> "06:45", "12:30 PM" -> "12:30"
+        const m = t.match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
+        if (!m) return "09:00";
+        let hh = parseInt(m[1],10);
+        const mm = m[2] ? m[2] : "00";
+        const ap = m[3].toUpperCase();
+        if (ap === "AM") { if (hh === 12) hh = 0; }
+        else { if (hh !== 12) hh += 12; }
+        return `${pad(hh)}${pad(mm)}`;
+      }
+
+      let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Bryan//HealthSchedule//EN\n";
+      for (const [time,item,dose,prio,why,tb] of DATA) {
+        if (!time.match(/AM|PM|Weekly|PRN|Daily|Temporary|As needed/i)) {
+          // skip non-time rows (none here)
+          continue;
+        }
+        // Treat Weekly/PRN as all-day notes if no HH:MM
+        let dtstart = "";
+        let rrule = "";
+        if (time.match(/Weekly/)) {
+          // Weekly on Sunday (BYDAY=SU)
+          dtstart = `${today}T090000`; // 9 AM placeholder
+          rrule = "RRULE:FREQ=WEEKLY;BYDAY=SU";
+        } else if (time.match(/PRN|Temporary|Daily|As needed/)) {
+          dtstart = `${today}T120000`; // noon placeholder
+        } else {
+          dtstart = `${today}T${to24h(time)}00`;
+        }
+        const uid = Math.random().toString(36).slice(2) + "@health";
+        const summary = `${item} ${dose ? `(${dose})` : ""} — ${prio}`;
+        const desc = why.replace(/\n/g," ");
+        ics += "BEGIN:VEVENT\n";
+        ics += `UID:${uid}\nDTSTAMP:${today}T080000Z\nDTSTART:${dtstart}\nSUMMARY:${summary}\nDESCRIPTION:${desc}\n`;
+        if (rrule) ics += rrule + "\n";
+        ics += "END:VEVENT\n";
+      }
+      ics += "END:VCALENDAR\n";
+      const blob = new Blob([ics], {type:"text/calendar"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "master_daily_schedule.ics";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
